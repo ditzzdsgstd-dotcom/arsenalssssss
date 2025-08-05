@@ -1,4 +1,4 @@
--- YoxanXHub Arsenal V1.5 | 1/9 - UI Dasar + Intro Loading
+-- YoxanXHub Arsenal V1.5 | 19 - UI Dasar + Intro Loading
 local Players = game:GetService("Players")
 local CoreGui = game:GetService("CoreGui")
 local TweenService = game:GetService("TweenService")
