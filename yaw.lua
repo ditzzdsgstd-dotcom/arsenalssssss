@@ -7,7 +7,7 @@ task.wait(1) -- ⏳ fix tombol tidak bisa dipencet saat game load cepat
 
 -- [ CREATE ORION UI ]
 local Window = OrionLib:MakeWindow({
-    Name = "YoxanXHub | Arsenal",
+    Name = "YoxanXHub | Arsenal V1",
     HidePremium = false,
     SaveConfig = false,
     IntroEnabled = false
