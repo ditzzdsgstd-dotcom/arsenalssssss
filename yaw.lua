@@ -5,7 +5,7 @@ local Player, Mouse, StarterGui = Players.LocalPlayer, Players.LocalPlayer:GetMo
 task.wait(1) -- biar render UI aman
 
 local Window = OrionLib:MakeWindow({
-    Name = "YoxanXHub | Arsenal",
+    Name = "YoxanXHub | Arsenal V2",
     HidePremium = false,
     SaveConfig = false,
     IntroEnabled = true,
