@@ -1,11 +1,14 @@
-local OrionLib = loadstring(game:HttpGet("https://raw.githubusercontent.com/1nig1htmare1234/SCRIPTS/main/Orion.lua"))()
-local Players, RunService, Camera = game:GetService("Players"), game:GetService("RunService"), workspace.CurrentCamera
-local Player, Mouse, StarterGui = Players.LocalPlayer, Players.LocalPlayer:GetMouse(), game:GetService("StarterGui")
+-- 🔄 Load OrionLib dari CoreGui agar tidak bentrok di Arsenal
+local OrionLibSource = game:HttpGet("https://raw.githubusercontent.com/1nig1htmare1234/SCRIPTS/main/Orion.lua")
+local Core = game:GetService("CoreGui")
+local OrionFolder = Instance.new("Folder", Core)
+OrionFolder.Name = "OrionFix_"..math.random(1000,9999)
+local OrionLib = loadstring(OrionLibSource)()
 
--- ✅ FIX UI AGAR BISA DIKLIK DI ARSENAL
+-- ✅ FIX UI AGAR BISA DIKLIK
 task.wait(0.5)
 pcall(function()
-    for _, v in pairs(game.CoreGui:GetChildren()) do
+    for _,v in pairs(Core:GetChildren()) do
         if v.Name:match("Orion") then
             v.ResetOnSpawn = false
             v.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
@@ -14,7 +17,11 @@ pcall(function()
     end
 end)
 
--- 🪟 BUAT WINDOW ORIONLIB
+-- 🧩 Set Up
+local Players, RunService, Camera = game:GetService("Players"), game:GetService("RunService"), workspace.CurrentCamera
+local Player, Mouse, StarterGui = Players.LocalPlayer, Players.LocalPlayer:GetMouse(), game:GetService("StarterGui")
+
+-- 🪟 WINDOW ORIONLIB
 local Window = OrionLib:MakeWindow({
     Name = "YoxanXHub | Arsenal",
     HidePremium = false,
@@ -29,7 +36,7 @@ local TabAimbot = Window:MakeTab({Name="Aimbot", Icon="🎯", PremiumOnly=false}
 local TabESP = Window:MakeTab({Name="ESP", Icon="👁️", PremiumOnly=false})
 local TabMisc = Window:MakeTab({Name="Misc", Icon="🧰", PremiumOnly=false})
 
--- 🟢 TOGGLE VARIABLE (SESUAI ASLI)
+-- ⚙️ VARIABLES
 Aimbot, Smooth, Wall, ESP, ESPTeam, ShowName, SafeMode, KillAll, AutoFire = false, false, false, false, false, false, false, false, false
 TargetPart, parts, partIdx = "Head", {"Head", "UpperTorso", "Torso"}, 1
 ESPMode, ESPColor, Rainbow, PositionMode = "Highlight", Color3.new(1,1,1), false, "Front"
@@ -270,7 +277,7 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
--- 🔫 AUTO FIRE (jika toggle aktif)
+-- 🔫 AUTO FIRE (aktifkan senjata otomatis saat toggle aktif)
 RunService.RenderStepped:Connect(function()
     if AutoFire and Player and Player.Character then
         local tool = Player.Character:FindFirstChildOfClass("Tool")
@@ -280,5 +287,5 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
--- ✅ NOTIFIKASI FINAL
-notify("✅ YoxanXHub | Arsenal Loaded Successfully!")
+-- 🔔 NOTIFIKASI SUKSES
+notify("✅ YoxanXHub V1.5| Arsenal Loaded Successfully!")
