@@ -2,7 +2,7 @@
 local Players, TweenService, CoreGui = game:GetService("Players"), game:GetService("TweenService"), game:GetService("CoreGui")
 local LocalPlayer = Players.LocalPlayer
 
--- Destroy previous UI
+-- Destroy previous Ui
 if CoreGui:FindFirstChild("YoxanXHub_UI") then
 	CoreGui.YoxanXHub_UI:Destroy()
 end
