@@ -2,7 +2,7 @@ local OrionLib = loadstring(game:HttpGet("https://raw.githubusercontent.com/1nig
 local Players, RunService, Camera = game:GetService("Players"), game:GetService("RunService"), workspace.CurrentCamera
 local Player, Mouse, StarterGui = Players.LocalPlayer, Players.LocalPlayer:GetMouse(), game:GetService("StarterGui")
 
-task.wait(1) -- biar render UI aman
+task.wait(1) 
 
 local Window = OrionLib:MakeWindow({
     Name = "YoxanXHub | Arsenal V2",
