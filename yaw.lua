@@ -2,28 +2,39 @@ local OrionLib = loadstring(game:HttpGet("https://raw.githubusercontent.com/1nig
 local Players, RunService, Camera = game:GetService("Players"), game:GetService("RunService"), workspace.CurrentCamera
 local Player, Mouse, StarterGui = Players.LocalPlayer, Players.LocalPlayer:GetMouse(), game:GetService("StarterGui")
 
-task.wait(1) 
+-- ✅ FIX UI AGAR BISA DIKLIK DI ARSENAL
+task.wait(0.5)
+pcall(function()
+    for _, v in pairs(game.CoreGui:GetChildren()) do
+        if v.Name:match("Orion") then
+            v.ResetOnSpawn = false
+            v.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+            v.IgnoreGuiInset = true
+        end
+    end
+end)
 
+-- 🪟 BUAT WINDOW ORIONLIB
 local Window = OrionLib:MakeWindow({
-    Name = "YoxanXHub | Arsenal V2",
+    Name = "YoxanXHub | Arsenal",
     HidePremium = false,
     SaveConfig = false,
     IntroEnabled = true,
-    IntroText = "YoxanXHub | Arsenal V2",
+    IntroText = "YoxanXHub | Arsenal",
     IntroIcon = "rbxassetid://7733658504"
 })
 
+-- 🧭 TABS
 local TabAimbot = Window:MakeTab({Name="Aimbot", Icon="🎯", PremiumOnly=false})
 local TabESP = Window:MakeTab({Name="ESP", Icon="👁️", PremiumOnly=false})
 local TabMisc = Window:MakeTab({Name="Misc", Icon="🧰", PremiumOnly=false})
 
--- Variabel toggle UI (tidak diubah, hanya disusun ulang)
+-- 🟢 TOGGLE VARIABLE (SESUAI ASLI)
 Aimbot, Smooth, Wall, ESP, ESPTeam, ShowName, SafeMode, KillAll, AutoFire = false, false, false, false, false, false, false, false, false
 TargetPart, parts, partIdx = "Head", {"Head", "UpperTorso", "Torso"}, 1
 ESPMode, ESPColor, Rainbow, PositionMode = "Highlight", Color3.new(1,1,1), false, "Front"
 safemodew, KillAllIndex = 10, 1
 
--- Fungsi notifikasi tetap
 function notify(text)
     pcall(function()
         StarterGui:SetCore("SendNotification", {
@@ -34,7 +45,7 @@ function notify(text)
     end)
 end
 
--- 🧠 AIMBOT TAB
+-- 🎯 AIMBOT TAB
 TabAimbot:AddToggle({Name="Aimbot", Default=false, Callback=function(v) Aimbot = v end})
 TabAimbot:AddToggle({Name="Smooth Aimbot", Default=false, Callback=function(v) Smooth = v end})
 TabAimbot:AddToggle({Name="Wall Aimbot", Default=false, Callback=function(v) Wall = v end})
@@ -199,6 +210,7 @@ RunService.RenderStepped:Connect(function()
         local color = Rainbow and getRainbow(tick()) or ESPColor
 
         if ESP and isValid then
+            -- 🎯 Highlight Mode
             if ESPMode == "Highlight" then
                 if not highlights[p] then
                     local h = Instance.new("Highlight")
@@ -210,6 +222,8 @@ RunService.RenderStepped:Connect(function()
                     if boxes[p] then boxes[p]:Destroy() boxes[p] = nil end
                 end
                 highlights[p].FillColor = color
+
+            -- 📦 Box Mode
             elseif ESPMode == "Box" then
                 local root = p.Character:FindFirstChild("HumanoidRootPart")
                 if root then
@@ -230,6 +244,7 @@ RunService.RenderStepped:Connect(function()
                 end
             end
 
+            -- 🧍 Show Name
             if ShowName and not names[p] then
                 local bb = Instance.new("BillboardGui", p.Character)
                 bb.Adornee = p.Character:FindFirstChild("Head")
@@ -255,7 +270,7 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
--- 🔫 Auto Fire Logic
+-- 🔫 AUTO FIRE (jika toggle aktif)
 RunService.RenderStepped:Connect(function()
     if AutoFire and Player and Player.Character then
         local tool = Player.Character:FindFirstChildOfClass("Tool")
@@ -265,5 +280,5 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
--- ✅ Notifikasi akhir
-notify("✅ YoxanXHub | Arsenal Loaded Successfully! !")
+-- ✅ NOTIFIKASI FINAL
+notify("✅ YoxanXHub | Arsenal Loaded Successfully!")
