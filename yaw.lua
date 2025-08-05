@@ -1,127 +1,136 @@
-local Rayfield = loadstring(game:HttpGet("https://raw.githubusercontent.com/1nig1htmare1234/SCRIPTS/main/Rayfield.lua"))()
+local OrionLib = loadstring(game:HttpGet("https://raw.githubusercontent.com/1nig1htmare1234/SCRIPTS/main/Orion.lua"))()
 
-local Window = Rayfield:CreateWindow({
+local Window = OrionLib:MakeWindow({
 	Name = "YoxanXHub | Arsenal V1.5",
-	LoadingTitle = "YoxanXHub Arsenal",
-	LoadingSubtitle = "by yoxanx",
-	ConfigurationSaving = {
-		Enabled = false
-	},
-        Discord = {
-            Enabled = false,
-        },
-        KeySystem = false
+	HidePremium = false,
+	SaveConfig = false,
+	IntroText = "YoxanXHub Arsenal",
+	ConfigFolder = "YoxanXHub"
 })
 
--- Tabs
-local Tab_Aimbot = Window:CreateTab("🎯 Aimbot", 4483362458)
-local Tab_Combat = Window:CreateTab("⚔️ Combat", 4483363089)
-local Tab_ESP = Window:CreateTab("👁️ ESP", 4483362660)
-local Tab_Misc = Window:CreateTab("🛠️ Misc", 4483361986)
+-- 🎯 Aimbot Tab
+local AimbotTab = Window:MakeTab({
+	Name = "🎯 Aimbot",
+	Icon = "rbxassetid://4483362458", -- sidik jari style
+	PremiumOnly = false
+})
 
--- Sample Toggle (nanti kita aktifkan di 2/5)
-Tab_Aimbot:CreateToggle({
+-- ⚔️ Combat Tab
+local CombatTab = Window:MakeTab({
+	Name = "⚔️ Combat",
+	Icon = "rbxassetid://4483363089", -- fingerprint-like
+	PremiumOnly = false
+})
+
+-- 👁️ ESP Tab
+local ESPTab = Window:MakeTab({
+	Name = "👁️ ESP",
+	Icon = "rbxassetid://4483362660", -- eye
+	PremiumOnly = false
+})
+
+-- 🛠️ Misc Tab
+local MiscTab = Window:MakeTab({
+	Name = "🛠️ Misc",
+	Icon = "rbxassetid://4483361986", -- gear
+	PremiumOnly = false
+})
+
+-- 🎯 Aimbot Toggle
+AimbotTab:AddToggle({
 	Name = "Enable Aimbot",
-	CurrentValue = false,
-	Flag = "AimbotEnabled",
+	Default = false,
 	Callback = function(Value)
-		-- diisi di 2/5
-	end,
+		getgenv().AimbotEnabled = Value
+	end    
 })
 
--- Sample Combat Toggle
-Tab_Combat:CreateToggle({
+-- ⚔️ Combat Toggles
+CombatTab:AddToggle({
 	Name = "Auto Fire",
-	CurrentValue = false,
-	Flag = "AutoFire",
+	Default = false,
 	Callback = function(Value)
-		-- diisi di 3/5
-	end,
+		getgenv().AutoFire = Value
+	end    
 })
 
--- Sample ESP Toggle
-Tab_ESP:CreateToggle({
+CombatTab:AddToggle({
+	Name = "Kill All",
+	Default = false,
+	Callback = function(Value)
+		getgenv().KillAll = Value
+	end    
+})
+
+-- 👁️ ESP Toggle
+ESPTab:AddToggle({
 	Name = "ESP Enabled",
-	CurrentValue = false,
-	Flag = "ESPEnabled",
+	Default = false,
 	Callback = function(Value)
-		-- diisi di 4/5
-	end,
+		getgenv().ESPEnabled = Value
+	end    
 })
 
--- Sample Misc Buttons
-Tab_Misc:CreateButton({
+-- 🛠️ Misc Buttons
+MiscTab:AddButton({
 	Name = "Teleport to Base",
 	Callback = function()
-		-- diisi di 5/5
-	end,
+		local root = game.Players.LocalPlayer.Character and game.Players.LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+		if root then root.CFrame = CFrame.new(0, 50, 0) end -- bisa diganti lokasi
+	end    
 })
 
-Tab_Misc:CreateButton({
+MiscTab:AddButton({
 	Name = "Exit UI",
 	Callback = function()
-		game.CoreGui:FindFirstChild("Rayfield")?.:Destroy()
-	end,
+		if game.CoreGui:FindFirstChild("Orion") then
+			game.CoreGui.Orion:Destroy()
+		end
+	end    
 })
 
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local Camera = workspace.CurrentCamera
 local LocalPlayer = Players.LocalPlayer
-local Mouse = LocalPlayer:GetMouse()
 
+-- Setting
 local AimbotEnabled = false
 local StickyLock = true
-local TeamCheck = true
 local TargetPart = "Head"
-local MaxDistance = 999
 local CurrentTarget = nil
+local MaxDistance = 999
 
--- Function Get Closest Enemy
+-- Dapatkan musuh terdekat
 local function GetClosest()
-	local closest, dist = nil, math.huge
+	local closest, shortest = nil, math.huge
 	for _, player in ipairs(Players:GetPlayers()) do
-		if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild(TargetPart) and player.Character:FindFirstChild("Humanoid") then
-			if TeamCheck and player.Team == LocalPlayer.Team then continue end
-			if player.Character.Humanoid.Health <= 0 then continue end
-
+		if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild(TargetPart) then
+			if player.Team == LocalPlayer.Team then continue end
 			local part = player.Character[TargetPart]
-			local screenPoint, onScreen = Camera:WorldToViewportPoint(part.Position)
-			if not onScreen then continue end
-
-			local mag = (Vector2.new(Mouse.X, Mouse.Y) - Vector2.new(screenPoint.X, screenPoint.Y)).Magnitude
-			local distToCam = (Camera.CFrame.Position - part.Position).Magnitude
-			if mag < dist and distToCam <= MaxDistance then
-				closest = player
-				dist = mag
+			local pos, onScreen = Camera:WorldToViewportPoint(part.Position)
+			if onScreen then
+				local dist = (Vector2.new(pos.X, pos.Y) - Vector2.new(Camera.ViewportSize.X/2, Camera.ViewportSize.Y/2)).Magnitude
+				if dist < shortest and (Camera.CFrame.Position - part.Position).Magnitude <= MaxDistance then
+					closest = player
+					shortest = dist
+				end
 			end
 		end
 	end
 	return closest
 end
 
--- Aimbot Core Logic
+-- Aimbot logic
 RunService.RenderStepped:Connect(function()
-	if not AimbotEnabled then return end
+	AimbotEnabled = getgenv().AimbotEnabled
+	if not AimbotEnabled then CurrentTarget = nil return end
+
 	local target = StickyLock and CurrentTarget or GetClosest()
 	if target and target.Character and target.Character:FindFirstChild(TargetPart) then
 		local part = target.Character[TargetPart]
-		if part and part:IsA("BasePart") then
-			Camera.CFrame = CFrame.new(Camera.CFrame.Position, part.Position)
-			CurrentTarget = target
-		end
-	else
-		CurrentTarget = nil
-	end
-end)
-
--- UI Connection (Rayfield Flag System)
-task.spawn(function()
-	while task.wait(0.2) do
-		local Flag = getgenv().RayfieldFlags
-		if Flag and Flag["AimbotEnabled"] ~= nil then
-			AimbotEnabled = Flag["AimbotEnabled"]
-		end
+		Camera.CFrame = CFrame.new(Camera.CFrame.Position, part.Position)
+		CurrentTarget = target
 	end
 end)
 
@@ -131,12 +140,10 @@ local LocalPlayer = Players.LocalPlayer
 local Camera = workspace.CurrentCamera
 local Mouse = LocalPlayer:GetMouse()
 
-local AutoFire = false
-local KillAll = false
 local TargetPart = "Head"
 local Gun = nil
 
--- Gun Detection
+-- Auto Gun detection
 LocalPlayer.CharacterAdded:Connect(function(char)
 	char.ChildAdded:Connect(function(tool)
 		if tool:IsA("Tool") and tool:FindFirstChildOfClass("RemoteEvent") then
@@ -145,25 +152,13 @@ LocalPlayer.CharacterAdded:Connect(function(char)
 	end)
 end)
 
--- Update Flags
-task.spawn(function()
-	while task.wait(0.2) do
-		local Flag = getgenv().RayfieldFlags
-		if Flag then
-			AutoFire = Flag["AutoFire"] or false
-			KillAll = Flag["KillAll"] or false
-		end
-	end
-end)
-
--- Closest Enemy
+-- Get closest enemy
 local function GetClosest()
 	local closest, dist = nil, math.huge
-	for _, player in pairs(Players:GetPlayers()) do
-		if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild(TargetPart) then
-			if player.Team == LocalPlayer.Team then continue end
-			local head = player.Character[TargetPart]
-			local screenPos, onScreen = Camera:WorldToViewportPoint(head.Position)
+	for _, player in ipairs(Players:GetPlayers()) do
+		if player ~= LocalPlayer and player.Team ~= LocalPlayer.Team and player.Character and player.Character:FindFirstChild(TargetPart) then
+			local part = player.Character[TargetPart]
+			local screenPos, onScreen = Camera:WorldToViewportPoint(part.Position)
 			if onScreen then
 				local mag = (Vector2.new(Mouse.X, Mouse.Y) - Vector2.new(screenPos.X, screenPos.Y)).Magnitude
 				if mag < dist then
@@ -176,31 +171,27 @@ local function GetClosest()
 	return closest
 end
 
--- AutoFire Logic
+-- Auto Fire Logic
 RunService.RenderStepped:Connect(function()
-	if AutoFire and Gun then
-		local target = GetClosest()
-		if target and target.Character and target.Character:FindFirstChild(TargetPart) then
-			local shoot = Gun:FindFirstChildWhichIsA("RemoteEvent", true)
-			if shoot then
-				shoot:FireServer({Position = target.Character[TargetPart].Position})
-			end
+	if not getgenv().AutoFire or not Gun then return end
+	local target = GetClosest()
+	if target and target.Character and target.Character:FindFirstChild(TargetPart) then
+		local fire = Gun:FindFirstChildWhichIsA("RemoteEvent", true)
+		if fire then
+			fire:FireServer({Position = target.Character[TargetPart].Position})
 		end
 	end
 end)
 
--- KillAll Logic
+-- Kill All Logic
 RunService.RenderStepped:Connect(function()
-	if KillAll and Gun then
-		for _, player in pairs(Players:GetPlayers()) do
-			if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild(TargetPart) then
-				if player.Team ~= LocalPlayer.Team then
-					local shoot = Gun:FindFirstChildWhichIsA("RemoteEvent", true)
-					if shoot then
-						shoot:FireServer({Position = player.Character[TargetPart].Position})
-						wait(0.03)
-					end
-				end
+	if not getgenv().KillAll or not Gun then return end
+	for _, player in ipairs(Players:GetPlayers()) do
+		if player ~= LocalPlayer and player.Team ~= LocalPlayer.Team and player.Character and player.Character:FindFirstChild(TargetPart) then
+			local fire = Gun:FindFirstChildWhichIsA("RemoteEvent", true)
+			if fire then
+				fire:FireServer({Position = player.Character[TargetPart].Position})
+				wait(0.05)
 			end
 		end
 	end
@@ -213,8 +204,6 @@ local LocalPlayer = Players.LocalPlayer
 local ESPFolder = Instance.new("Folder", game.CoreGui)
 ESPFolder.Name = "YoxanXHub_ESP"
 
-local ESPEnabled = false
-
 -- WallCheck
 local function CanSee(part)
 	if not part then return false end
@@ -224,7 +213,7 @@ local function CanSee(part)
 	return ray and ray.Instance and ray.Instance:IsDescendantOf(part.Parent)
 end
 
--- Create ESP Label
+-- Create ESP
 local function CreateESP(player)
 	if ESPFolder:FindFirstChild(player.Name) then return end
 	local esp = Instance.new("BillboardGui", ESPFolder)
@@ -240,12 +229,12 @@ local function CreateESP(player)
 	label.Text = player.Name
 	label.Font = Enum.Font.GothamBold
 	label.TextSize = 14
-	label.TextColor3 = Color3.fromRGB(255, 255, 255)
+	label.TextColor3 = Color3.new(1, 1, 1)
 end
 
--- ESP Update Loop
+-- Update Loop
 RunService.RenderStepped:Connect(function()
-	if not ESPEnabled then return end
+	if not getgenv().ESPEnabled then return end
 	for _, player in ipairs(Players:GetPlayers()) do
 		if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("Head") then
 			local head = player.Character.Head
@@ -273,73 +262,44 @@ RunService.RenderStepped:Connect(function()
 	end
 end)
 
--- Sync with Rayfield Flag
-task.spawn(function()
-	while task.wait(0.2) do
-		local Flag = getgenv().RayfieldFlags
-		if Flag and Flag["ESPEnabled"] ~= nil then
-			ESPEnabled = Flag["ESPEnabled"]
-		end
-	end
-end)
-
 local RunService = game:GetService("RunService")
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
 
 local WalkSpeed = 16
-local AntiVoid = true
-local TPPosition = Vector3.new(0, 50, 0) -- ganti sesuai base
+local FastWalk = false
+local AntiVoidEnabled = true
+local BasePosition = Vector3.new(0, 50, 0)
 
--- WalkSpeed toggle logic
+-- Auto Character Update
+LocalPlayer.CharacterAdded:Connect(function(char)
+	Character = char
+end)
+
+-- WalkSpeed logic
 RunService.RenderStepped:Connect(function()
-	local human = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid")
+	local human = Character and Character:FindFirstChild("Humanoid")
 	if human then
-		human.WalkSpeed = WalkSpeed
+		human.WalkSpeed = FastWalk and 30 or 16
 	end
 end)
 
--- AntiVoid Logic
+-- AntiVoid logic
 RunService.Stepped:Connect(function()
-	local root = Character:FindFirstChild("HumanoidRootPart")
-	if root and root.Position.Y < -10 and AntiVoid then
-		root.CFrame = CFrame.new(TPPosition)
+	if not AntiVoidEnabled then return end
+	local root = Character and Character:FindFirstChild("HumanoidRootPart")
+	if root and root.Position.Y < -10 then
+		root.CFrame = CFrame.new(BasePosition)
 	end
 end)
 
--- Rayfield Button Hooks
+-- Sync Flags from OrionLib
 task.spawn(function()
-	local gui = game:GetService("CoreGui"):FindFirstChild("Rayfield")
-	if gui then
-		local flags = getgenv().RayfieldFlags
-		while task.wait(0.3) do
-			if flags then
-				if flags["WalkSpeedFast"] then
-					WalkSpeed = 30
-				else
-					WalkSpeed = 16
-				end
-			end
-		end
+	while task.wait(0.2) do
+		local flags = getgenv().OrionFlags or {}
+		FastWalk = flags["WalkSpeedFast"] or false
 	end
 end)
 
--- Teleport to Base (Manual)
-local function TeleportToBase()
-	local root = Character:FindFirstChild("HumanoidRootPart")
-	if root then
-		root.CFrame = CFrame.new(TPPosition)
-	end
-end
-
--- Connect UI Buttons (Rayfield Manual Link)
-local miscTab = game:GetService("CoreGui"):FindFirstChild("Rayfield")
-if miscTab then
-	local folder = getgenv().RayfieldFlags
-	if folder then
-		-- Button actions ditangani langsung di 1/5:
-		-- "Teleport to Base" button calls TeleportToBase
-		-- "Exit UI" button: game.CoreGui:FindFirstChild("Rayfield")?.:Destroy()
-	end
-end
+OrionLib:Init()
