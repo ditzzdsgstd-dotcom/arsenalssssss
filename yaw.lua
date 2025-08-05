@@ -9,7 +9,7 @@ local Window = OrionLib:MakeWindow({
     HidePremium = false,
     SaveConfig = false,
     IntroEnabled = true,
-    IntroText = "YoxanXHub | Arsenal",
+    IntroText = "YoxanXHub | Arsenal V2",
     IntroIcon = "rbxassetid://7733658504"
 })
 
