@@ -1,83 +1,89 @@
 local OrionLib = loadstring(game:HttpGet("https://raw.githubusercontent.com/1nig1htmare1234/SCRIPTS/main/Orion.lua"))()
 
 local Window = OrionLib:MakeWindow({
-	Name = "YoxanXHub | Arsenal V1.5",
+	Name = "YoxanXHub | Arsenal V1.6",
 	HidePremium = false,
 	SaveConfig = false,
-	IntroText = "YoxanXHub Arsenal",
+	IntroText = "YoxanXHub V1.6 Loaded",
 	ConfigFolder = "YoxanXHub"
 })
 
 -- 🎯 Aimbot Tab
 local AimbotTab = Window:MakeTab({
 	Name = "🎯 Aimbot",
-	Icon = "rbxassetid://4483362458", -- sidik jari style
+	Icon = "rbxassetid://4483362458", -- fingerprint icon
 	PremiumOnly = false
 })
 
 -- ⚔️ Combat Tab
 local CombatTab = Window:MakeTab({
 	Name = "⚔️ Combat",
-	Icon = "rbxassetid://4483363089", -- fingerprint-like
+	Icon = "rbxassetid://4483363089",
 	PremiumOnly = false
 })
 
 -- 👁️ ESP Tab
 local ESPTab = Window:MakeTab({
 	Name = "👁️ ESP",
-	Icon = "rbxassetid://4483362660", -- eye
+	Icon = "rbxassetid://4483362660",
 	PremiumOnly = false
 })
 
 -- 🛠️ Misc Tab
 local MiscTab = Window:MakeTab({
 	Name = "🛠️ Misc",
-	Icon = "rbxassetid://4483361986", -- gear
+	Icon = "rbxassetid://4483361986",
 	PremiumOnly = false
 })
 
--- 🎯 Aimbot Toggle
+-- 🎯 Aimbot Toggles
 AimbotTab:AddToggle({
 	Name = "Enable Aimbot",
-	Default = false,
-	Callback = function(Value)
-		getgenv().AimbotEnabled = Value
-	end    
+	Default = true,
+	Flag = "EnableAimbot"
+})
+
+AimbotTab:AddToggle({
+	Name = "Sticky Lock",
+	Default = true,
+	Flag = "StickyLock"
 })
 
 -- ⚔️ Combat Toggles
 CombatTab:AddToggle({
 	Name = "Auto Fire",
-	Default = false,
-	Callback = function(Value)
-		getgenv().AutoFire = Value
-	end    
+	Default = true,
+	Flag = "AutoFire"
 })
 
 CombatTab:AddToggle({
-	Name = "Kill All",
+	Name = "Kill All (Invisible)",
 	Default = false,
-	Callback = function(Value)
-		getgenv().KillAll = Value
-	end    
+	Flag = "KillAll"
 })
 
 -- 👁️ ESP Toggle
 ESPTab:AddToggle({
 	Name = "ESP Enabled",
-	Default = false,
-	Callback = function(Value)
-		getgenv().ESPEnabled = Value
-	end    
+	Default = true,
+	Flag = "ESP"
 })
 
--- 🛠️ Misc Buttons
+-- 🛠️ Misc Toggles
+MiscTab:AddToggle({
+	Name = "WalkSpeed Fast",
+	Default = false,
+	Flag = "FastWalk"
+})
+
 MiscTab:AddButton({
 	Name = "Teleport to Base",
 	Callback = function()
 		local root = game.Players.LocalPlayer.Character and game.Players.LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-		if root then root.CFrame = CFrame.new(0, 50, 0) end -- bisa diganti lokasi
-	end    
+		if root then
+			root.CFrame = CFrame.new(0, 50, 0)
+		end
+	end
 })
 
 MiscTab:AddButton({
@@ -86,84 +92,71 @@ MiscTab:AddButton({
 		if game.CoreGui:FindFirstChild("Orion") then
 			game.CoreGui.Orion:Destroy()
 		end
-	end    
+	end
 })
 
-local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
+local Players = game:GetService("Players")
 local Camera = workspace.CurrentCamera
 local LocalPlayer = Players.LocalPlayer
 
--- Setting
-local AimbotEnabled = false
-local StickyLock = true
-local TargetPart = "Head"
-local CurrentTarget = nil
-local MaxDistance = 999
+local function GetClosestEnemy()
+	local closest = nil
+	local shortest = math.huge
+	for _, player in ipairs(Players:GetPlayers()) do
+		if player ~= LocalPlayer and player.Team ~= LocalPlayer.Team and player.Character and player.Character:FindFirstChild("Head") then
+			local head = player.Character.Head
+			local screenPos, onScreen = Camera:WorldToViewportPoint(head.Position)
+			if onScreen then
+				local dist = (Vector2.new(screenPos.X, screenPos.Y) - Vector2.new(Camera.ViewportSize.X/2, Camera.ViewportSize.Y/2)).Magnitude
+				if dist < shortest then
+					shortest = dist
+					closest = player
+				end
+			end
+		end
+	end
+	return closest
+end
 
--- Dapatkan musuh terdekat
-local function GetClosest()
+local CurrentTarget = nil
+
+RunService.RenderStepped:Connect(function()
+	local flags = getgenv().OrionFlags or {}
+	local aimbotEnabled = flags["EnableAimbot"]
+	local sticky = flags["StickyLock"]
+
+	if not aimbotEnabled then
+		CurrentTarget = nil
+		return
+	end
+
+	if not sticky or not CurrentTarget or not CurrentTarget.Character or not CurrentTarget.Character:FindFirstChild("Head") then
+		CurrentTarget = GetClosestEnemy()
+	end
+
+	if CurrentTarget and CurrentTarget.Character and CurrentTarget.Character:FindFirstChild("Head") then
+		local head = CurrentTarget.Character.Head
+		Camera.CFrame = CFrame.new(Camera.CFrame.Position, head.Position)
+	end
+end)
+
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local LocalPlayer = Players.LocalPlayer
+local Camera = workspace.CurrentCamera
+
+local function GetClosestEnemy()
 	local closest, shortest = nil, math.huge
 	for _, player in ipairs(Players:GetPlayers()) do
-		if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild(TargetPart) then
-			if player.Team == LocalPlayer.Team then continue end
-			local part = player.Character[TargetPart]
-			local pos, onScreen = Camera:WorldToViewportPoint(part.Position)
+		if player ~= LocalPlayer and player.Team ~= LocalPlayer.Team and player.Character and player.Character:FindFirstChild("Head") then
+			local head = player.Character.Head
+			local screenPos, onScreen = Camera:WorldToViewportPoint(head.Position)
 			if onScreen then
-				local dist = (Vector2.new(pos.X, pos.Y) - Vector2.new(Camera.ViewportSize.X/2, Camera.ViewportSize.Y/2)).Magnitude
-				if dist < shortest and (Camera.CFrame.Position - part.Position).Magnitude <= MaxDistance then
-					closest = player
+				local dist = (Vector2.new(screenPos.X, screenPos.Y) - Vector2.new(Camera.ViewportSize.X/2, Camera.ViewportSize.Y/2)).Magnitude
+				if dist < shortest then
 					shortest = dist
-				end
-			end
-		end
-	end
-	return closest
-end
-
--- Aimbot logic
-RunService.RenderStepped:Connect(function()
-	AimbotEnabled = getgenv().AimbotEnabled
-	if not AimbotEnabled then CurrentTarget = nil return end
-
-	local target = StickyLock and CurrentTarget or GetClosest()
-	if target and target.Character and target.Character:FindFirstChild(TargetPart) then
-		local part = target.Character[TargetPart]
-		Camera.CFrame = CFrame.new(Camera.CFrame.Position, part.Position)
-		CurrentTarget = target
-	end
-end)
-
-local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
-local LocalPlayer = Players.LocalPlayer
-local Camera = workspace.CurrentCamera
-local Mouse = LocalPlayer:GetMouse()
-
-local TargetPart = "Head"
-local Gun = nil
-
--- Auto Gun detection
-LocalPlayer.CharacterAdded:Connect(function(char)
-	char.ChildAdded:Connect(function(tool)
-		if tool:IsA("Tool") and tool:FindFirstChildOfClass("RemoteEvent") then
-			Gun = tool
-		end
-	end)
-end)
-
--- Get closest enemy
-local function GetClosest()
-	local closest, dist = nil, math.huge
-	for _, player in ipairs(Players:GetPlayers()) do
-		if player ~= LocalPlayer and player.Team ~= LocalPlayer.Team and player.Character and player.Character:FindFirstChild(TargetPart) then
-			local part = player.Character[TargetPart]
-			local screenPos, onScreen = Camera:WorldToViewportPoint(part.Position)
-			if onScreen then
-				local mag = (Vector2.new(Mouse.X, Mouse.Y) - Vector2.new(screenPos.X, screenPos.Y)).Magnitude
-				if mag < dist then
 					closest = player
-					dist = mag
 				end
 			end
 		end
@@ -171,29 +164,59 @@ local function GetClosest()
 	return closest
 end
 
--- Auto Fire Logic
-RunService.RenderStepped:Connect(function()
-	if not getgenv().AutoFire or not Gun then return end
-	local target = GetClosest()
-	if target and target.Character and target.Character:FindFirstChild(TargetPart) then
-		local fire = Gun:FindFirstChildWhichIsA("RemoteEvent", true)
-		if fire then
-			fire:FireServer({Position = target.Character[TargetPart].Position})
+local function GetGun()
+	local char = LocalPlayer.Character
+	if not char then return nil end
+	for _, v in ipairs(char:GetChildren()) do
+		if v:IsA("Tool") and v:FindFirstChildWhichIsA("RemoteEvent", true) then
+			return v
 		end
 	end
-end)
+	return nil
+end
 
--- Kill All Logic
+local function SetInvisible(state)
+	local char = LocalPlayer.Character
+	if not char then return end
+	for _, part in ipairs(char:GetDescendants()) do
+		if part:IsA("BasePart") then
+			part.Transparency = state and 1 or 0
+			part.CanCollide = not state
+		elseif part:IsA("Decal") then
+			part.Transparency = state and 1 or 0
+		end
+	end
+end
+
 RunService.RenderStepped:Connect(function()
-	if not getgenv().KillAll or not Gun then return end
-	for _, player in ipairs(Players:GetPlayers()) do
-		if player ~= LocalPlayer and player.Team ~= LocalPlayer.Team and player.Character and player.Character:FindFirstChild(TargetPart) then
-			local fire = Gun:FindFirstChildWhichIsA("RemoteEvent", true)
-			if fire then
-				fire:FireServer({Position = player.Character[TargetPart].Position})
-				wait(0.05)
+	local flags = getgenv().OrionFlags or {}
+	local autoFire = flags["AutoFire"]
+	local killAll = flags["KillAll"]
+	local gun = GetGun()
+	if not gun then return end
+
+	local fireRemote = gun:FindFirstChildWhichIsA("RemoteEvent", true)
+	if not fireRemote then return end
+
+	-- Auto Fire Logic
+	if autoFire then
+		local target = GetClosestEnemy()
+		if target and target.Character and target.Character:FindFirstChild("Head") then
+			fireRemote:FireServer({Position = target.Character.Head.Position})
+		end
+	end
+
+	-- Kill All Logic
+	if killAll then
+		SetInvisible(true)
+		for _, player in ipairs(Players:GetPlayers()) do
+			if player ~= LocalPlayer and player.Team ~= LocalPlayer.Team and player.Character and player.Character:FindFirstChild("Head") then
+				fireRemote:FireServer({Position = player.Character.Head.Position})
+				task.wait(0.05)
 			end
 		end
+	else
+		SetInvisible(false)
 	end
 end)
 
@@ -201,19 +224,18 @@ local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local Camera = workspace.CurrentCamera
 local LocalPlayer = Players.LocalPlayer
+
 local ESPFolder = Instance.new("Folder", game.CoreGui)
 ESPFolder.Name = "YoxanXHub_ESP"
 
--- WallCheck
 local function CanSee(part)
 	if not part then return false end
 	local origin = Camera.CFrame.Position
-	local direction = (part.Position - origin).Unit * 500
+	local direction = (part.Position - origin).Unit * 1000
 	local ray = workspace:Raycast(origin, direction, RaycastParams.new())
 	return ray and ray.Instance and ray.Instance:IsDescendantOf(part.Parent)
 end
 
--- Create ESP
 local function CreateESP(player)
 	if ESPFolder:FindFirstChild(player.Name) then return end
 	local esp = Instance.new("BillboardGui", ESPFolder)
@@ -232,9 +254,8 @@ local function CreateESP(player)
 	label.TextColor3 = Color3.new(1, 1, 1)
 end
 
--- Update Loop
 RunService.RenderStepped:Connect(function()
-	if not getgenv().ESPEnabled then return end
+	if not getgenv().OrionFlags or not getgenv().OrionFlags["ESP"] then return end
 	for _, player in ipairs(Players:GetPlayers()) do
 		if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("Head") then
 			local head = player.Character.Head
@@ -267,25 +288,25 @@ local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
 
-local WalkSpeed = 16
 local FastWalk = false
 local AntiVoidEnabled = true
 local BasePosition = Vector3.new(0, 50, 0)
 
--- Auto Character Update
+-- Update Character Reference
 LocalPlayer.CharacterAdded:Connect(function(char)
 	Character = char
 end)
 
--- WalkSpeed logic
+-- WalkSpeed Logic
 RunService.RenderStepped:Connect(function()
-	local human = Character and Character:FindFirstChild("Humanoid")
+	if not Character then return end
+	local human = Character:FindFirstChildOfClass("Humanoid")
 	if human then
 		human.WalkSpeed = FastWalk and 30 or 16
 	end
 end)
 
--- AntiVoid logic
+-- Anti Void Logic
 RunService.Stepped:Connect(function()
 	if not AntiVoidEnabled then return end
 	local root = Character and Character:FindFirstChild("HumanoidRootPart")
@@ -294,11 +315,11 @@ RunService.Stepped:Connect(function()
 	end
 end)
 
--- Sync Flags from OrionLib
+-- Orion Flag Check
 task.spawn(function()
 	while task.wait(0.2) do
 		local flags = getgenv().OrionFlags or {}
-		FastWalk = flags["WalkSpeedFast"] or false
+		FastWalk = flags["FastWalk"] or false
 	end
 end)
 
