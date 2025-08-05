@@ -1,30 +1,31 @@
--- [ INIT + DELAY FIX ]
 local OrionLib = loadstring(game:HttpGet("https://raw.githubusercontent.com/1nig1htmare1234/SCRIPTS/main/Orion.lua"))()
 local Players, RunService, Camera = game:GetService("Players"), game:GetService("RunService"), workspace.CurrentCamera
 local Player, Mouse, StarterGui = Players.LocalPlayer, Players.LocalPlayer:GetMouse(), game:GetService("StarterGui")
 
-task.wait(1) -- ⏳ fix tombol tidak bisa dipencet saat game load cepat
+task.wait(1) -- ⏳ fix Orion UI not rendering correctly if skipped
 
--- [ CREATE ORION UI ]
+-- ✅ OrionLib Window with Intro Enabled
 local Window = OrionLib:MakeWindow({
-    Name = "YoxanXHub | Arsenal V1",
+    Name = "YoxanXHub | Arsenal",
     HidePremium = false,
     SaveConfig = false,
-    IntroEnabled = false
+    IntroEnabled = true,
+    IntroText = "YoxanXHub | Arsenal",
+    IntroIcon = "rbxassetid://7733658504" -- custom icon, boleh diganti
 })
 
--- [ UI TABS ]
+-- 🧱 Tabs
 local TabAimbot = Window:MakeTab({Name="Aimbot", Icon="⚙️", PremiumOnly=false})
 local TabESP = Window:MakeTab({Name="ESP", Icon="🧿", PremiumOnly=false})
 local TabMisc = Window:MakeTab({Name="Misc", Icon="🧰", PremiumOnly=false})
 
--- [ TOGGLE STATE VARS ]
+-- 📦 Variables
 Aimbot, Smooth, Wall, ESP, ESPTeam, ShowName, SafeMode, KillAll, AutoFire = false, false, false, false, false, false, false, false, false
 TargetPart, parts, partIdx = "Head", {"Head", "UpperTorso", "Torso"}, 1
 ESPMode, ESPColor, Rainbow, PositionMode = "Highlight", Color3.new(1,1,1), false, "Front"
 safemodew, KillAllIndex = 10, 1
 
--- [ NOTIFY HELPER ]
+-- 🔔 Notif Helper
 function notify(text)
     pcall(function()
         StarterGui:SetCore("SendNotification", {
@@ -35,7 +36,7 @@ function notify(text)
     end)
 end
 
--- [ AIMBOT TAB ]
+-- 🎯 Aimbot Tab
 TabAimbot:AddToggle({Name="Aimbot", Default=false, Callback=function(v) Aimbot = v end})
 TabAimbot:AddToggle({Name="Smooth Aimbot", Default=false, Callback=function(v) Smooth = v end})
 TabAimbot:AddToggle({Name="Wall Aimbot", Default=false, Callback=function(v) Wall = v end})
@@ -46,7 +47,7 @@ TabAimbot:AddButton({Name="Switch Target Part", Callback=function()
     notify("Target Lock: " .. TargetPart)
 end})
 
--- [ ESP TAB ]
+-- 👁️ ESP Tab
 TabESP:AddToggle({Name="Enable ESP", Default=false, Callback=function(v) ESP = v end})
 TabESP:AddToggle({Name="Team Check", Default=false, Callback=function(v) ESPTeam = v end})
 TabESP:AddToggle({Name="Show Name", Default=false, Callback=function(v) ShowName = v end})
@@ -71,7 +72,7 @@ TabESP:AddTextbox({
     end
 })
 
--- [ MISC TAB ]
+-- 🧰 Misc Tab
 TabMisc:AddToggle({Name="Kill All", Default=false, Callback=function(v) KillAll = v KillAllIndex = 1 end})
 TabMisc:AddToggle({Name="Auto Fire", Default=false, Callback=function(v) AutoFire = v end})
 TabMisc:AddButton({Name="Toggle TP Position", Callback=function()
@@ -79,7 +80,7 @@ TabMisc:AddButton({Name="Toggle TP Position", Callback=function()
     notify("Position: " .. PositionMode)
 end})
 
--- Valid target check
+-- 🔍 Validasi target
 local function valid(p)
     return p and p.Character
         and p.Character:FindFirstChild(TargetPart)
@@ -87,7 +88,7 @@ local function valid(p)
         and p.Character.Humanoid.Health > 0
 end
 
--- Raycast: apakah musuh tertutup?
+-- 🔦 Cek apakah musuh tertutup (Wall Aimbot)
 local function isBehind(p)
     local origin = Camera.CFrame.Position
     local direction = (p.Character[TargetPart].Position - origin)
@@ -96,14 +97,14 @@ local function isBehind(p)
     return hit and not p.Character:IsAncestorOf(hit)
 end
 
--- Cari musuh terdekat di layar
+-- 🎯 Cari musuh terdekat dari crosshair
 local function getClosest()
     local best, dist = nil, math.huge
     for _, p in pairs(Players:GetPlayers()) do
         if p ~= Player and valid(p) and p.Team ~= Player.Team then
             if not Wall and isBehind(p) then continue end
-            local pos, visible = Camera:WorldToViewportPoint(p.Character[TargetPart].Position)
-            if visible then
+            local pos, onScreen = Camera:WorldToViewportPoint(p.Character[TargetPart].Position)
+            if onScreen then
                 local mag = (Vector2.new(pos.X, pos.Y) - Vector2.new(Mouse.X, Mouse.Y)).Magnitude
                 if mag < dist then
                     dist = mag
@@ -115,18 +116,7 @@ local function getClosest()
     return best
 end
 
--- Semua musuh
-local function getEnemies()
-    local list = {}
-    for _, p in pairs(Players:GetPlayers()) do
-        if p ~= Player and valid(p) and p.Team ~= Player.Team then
-            table.insert(list, p)
-        end
-    end
-    return list
-end
-
--- Musuh paling aman (terdekat)
+-- 🔐 Target aman (terdekat dalam radius)
 local function getSafeTarget()
     local safest, dist = nil, safemodew
     for _, p in pairs(Players:GetPlayers()) do
@@ -141,7 +131,18 @@ local function getSafeTarget()
     return safest
 end
 
--- Dapatkan posisi teleport (di depan/di belakang musuh)
+-- 👥 Dapatkan semua musuh aktif
+local function getEnemies()
+    local list = {}
+    for _, p in pairs(Players:GetPlayers()) do
+        if p ~= Player and valid(p) and p.Team ~= Player.Team then
+            table.insert(list, p)
+        end
+    end
+    return list
+end
+
+-- 🧭 Posisi TP di depan/di belakang musuh
 local function getPositionCFrame(target)
     local hrp = target.Character and target.Character:FindFirstChild("HumanoidRootPart")
     if not hrp then return nil end
@@ -149,18 +150,18 @@ local function getPositionCFrame(target)
     return CFrame.new(hrp.Position + offset, hrp.Position)
 end
 
--- Logic runtime
+-- 🔁 Runtime Logic
 local CurrentTarget = nil
 local lastTeleportTime = 0
 local TELEPORT_DELAY = 1.5
 
 RunService.RenderStepped:Connect(function()
-    -- Reset target jika semuanya mati/nonaktif
+    -- Reset target jika semua toggle mati
     if not Aimbot and not KillAll then
         CurrentTarget = nil
     end
 
-    -- 🔪 Kill All logic
+    -- 🔪 Kill All aktif
     if KillAll then
         local enemies = getEnemies()
         if #enemies > 0 and tick() - lastTeleportTime >= TELEPORT_DELAY then
@@ -179,7 +180,7 @@ RunService.RenderStepped:Connect(function()
         end
     end
 
-    -- 🎯 Aimbot logic
+    -- 🎯 Aimbot aktif
     if Aimbot and not KillAll then
         CurrentTarget = SafeMode and getSafeTarget() or getClosest()
         if CurrentTarget and valid(CurrentTarget) and CurrentTarget.Team ~= Player.Team then
@@ -193,7 +194,7 @@ end)
 
 local highlights, boxes, names = {}
 
--- Fungsi rainbow
+-- 🌈 Rainbow Function
 local function getRainbow(t)
     local f = 2
     return Color3.fromRGB(
@@ -203,6 +204,7 @@ local function getRainbow(t)
     )
 end
 
+-- 🔁 ESP Runtime
 RunService.RenderStepped:Connect(function()
     for _, p in pairs(Players:GetPlayers()) do
         if p == Player then continue end
@@ -211,7 +213,7 @@ RunService.RenderStepped:Connect(function()
         local color = Rainbow and getRainbow(tick()) or ESPColor
 
         if ESP and isValid then
-            -- HIGHLIGHT ESP
+            -- ✨ Highlight ESP
             if ESPMode == "Highlight" then
                 if not highlights[p] then
                     local h = Instance.new("Highlight")
@@ -224,7 +226,7 @@ RunService.RenderStepped:Connect(function()
                 end
                 highlights[p].FillColor = color
 
-            -- BOX ESP
+            -- 📦 Box ESP
             elseif ESPMode == "Box" then
                 local root = p.Character:FindFirstChild("HumanoidRootPart")
                 if root then
@@ -245,7 +247,7 @@ RunService.RenderStepped:Connect(function()
                 end
             end
 
-            -- Show Name
+            -- 🏷 Show Name
             if ShowName and not names[p] then
                 local bb = Instance.new("BillboardGui", p.Character)
                 bb.Adornee = p.Character:FindFirstChild("Head")
@@ -264,7 +266,7 @@ RunService.RenderStepped:Connect(function()
                 names[p] = nil
             end
         else
-            -- Clean jika ESP mati atau player invalid
+            -- 🧹 Cleanup jika invalid atau ESP mati
             if highlights[p] then highlights[p]:Destroy() highlights[p] = nil end
             if boxes[p] then boxes[p]:Destroy() boxes[p] = nil end
             if names[p] then names[p]:Destroy() names[p] = nil end
@@ -272,7 +274,7 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
--- 🔫 Auto Fire Handler
+-- 🔫 Auto Fire Logic
 RunService.RenderStepped:Connect(function()
     if AutoFire and Player and Player.Character then
         local tool = Player.Character:FindFirstChildOfClass("Tool")
@@ -282,5 +284,5 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
--- 🟢 Notify when all loaded
-notify("✅ YoxanXHub | Arsenal Loaded Successfully!")
+-- 🟢 Final Notification
+notify("✅ YoxanXHub V1 | Arsenal Loaded Successfully!")
